@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
-import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "lecturer")
@@ -31,9 +31,13 @@ public class Lecturer {
     @Column(name = "lecturer_surname", length = 50)
     private String surName;
 
+    @NotNull
+    @Column(name = "current_student_count")
+    private Integer currentStudentCount;
+
     @ManyToMany
     @JoinTable(name = "lecturers_courses",
     joinColumns = @JoinColumn(name = "lecturer_id"),
     inverseJoinColumns = @JoinColumn(name = "course_id"))
-    private List<Course> courses;
+    private Set<Course> courses;
 }
