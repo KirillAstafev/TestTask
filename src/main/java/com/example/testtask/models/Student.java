@@ -47,7 +47,6 @@ public class Student {
     private String surName;
 
     @ManyToMany
-    @JsonManagedReference
     @JoinTable(name = "students_courses",
     joinColumns = @JoinColumn(name = "student_id"),
     inverseJoinColumns = @JoinColumn(name = "course_id"))

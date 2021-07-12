@@ -31,6 +31,8 @@ public class Lecturer {
     @Column(name = "lecturer_surname", length = 50)
     private String surName;
 
+
+    // Текущее кол-во студентов, рассчитывается отдельно для каждого преподавателя
     @NotNull
     @Column(name = "current_student_count")
     private Integer currentStudentCount;
