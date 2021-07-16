@@ -14,7 +14,7 @@ public interface LecturerRepository extends JpaRepository<Lecturer, Long> {
     @Query(value = "select lecturer.lecturer_id, lecturer_forename, lecturer_patronymic, lecturer_surname " +
             "from lecturer inner join lecturers_courses lc on lecturer.lecturer_id = lc.lecturer_id " +
             "inner join course c on lc.course_id = c.course_id " +
-            "left join journal j on c.course_id = j.course_id " +
+            "left join journal j on lecturer.lecturer_id = j.lecturer_id " +
             "where c.course_id=:courseId " +
             "group by lecturer.lecturer_id, lecturer_forename, lecturer_patronymic, lecturer_surname " +
             "having count(*) < 20 order by count(*)",
