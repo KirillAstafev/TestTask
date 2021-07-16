@@ -5,7 +5,7 @@ import com.example.testtask.models.Lecturer;
 import com.example.testtask.models.Student;
 import com.example.testtask.repositories.LecturerRepository;
 import com.example.testtask.repositories.StudentRepository;
-import com.example.testtask.repositories.custom.CustomStudentCourseRepository;
+import com.example.testtask.repositories.CustomStudentCourseRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -27,27 +27,25 @@ public class StudentService {
     }
 
     public void saveAllCoursesForStudent(Student updatedStudent) throws Exception {
-        checkTotalWorkload(updatedStudent);
-        checkForAvailableLecturers(updatedStudent);
+        List<Course> currentCourses = updatedStudent.getCourses();
+        checkTotalWorkload(currentCourses);
 
-        studentCourseRepository.saveAllCoursesForStudent(updatedStudent);
+        List<Lecturer> availableLecturers = findAvailableLecturers(currentCourses);
+
+        for (int i = 0; i < currentCourses.size(); i++) {
+            studentCourseRepository.saveCourseForStudent(updatedStudent.getStudentId(),
+                    currentCourses.get(i).getCourseId(),
+                    availableLecturers.get(i).getLecturerId());
+        }
     }
 
     //Метод, проверяющий наличие не перегруженных преподавателей для каждого выбранного студентом курса
-    private void checkForAvailableLecturers(Student updatedStudent) throws Exception {
-        boolean noLecturers = false;
-
-        /*
-        Сообщение, выводимое пользователю в том случае, если для какого-то из указанных курсов
-        не осталось свободных преподавателей. Сообщение строится по мере поиска преподавателей,
-        чтобы вывести наиболее информативное сообщение (обо всех недоступных курсах)
-        */
-        StringBuilder builder = new StringBuilder().append("ОШИБКА! ДЛЯ СЛЕДУЮЩИХ КУРСОВ: ");
-
+    private List<Lecturer> findAvailableLecturers(List<Course> courses) throws Exception {
         //Список свободных преподавателей (один для каждого курса)
         List<Lecturer> resultLecturers = new ArrayList<>();
+        List<String> filledCourseNames = new ArrayList<>();
 
-        for (Course course : updatedStudent.getCourses()) {
+        for (Course course : courses) {
             List<Lecturer> availableLecturers = lecturerRepository.findAvailableLecturersForCourse(course.getCourseId());
 
             /*
@@ -55,8 +53,7 @@ public class StudentService {
             (availableLecturers) пуст
             */
             if (availableLecturers.isEmpty()) {
-                if (!noLecturers) noLecturers = true;
-                builder.append(course.getCourseName()).append(" ");
+                filledCourseNames.add(course.getCourseName());
                 continue;
             }
 
@@ -64,17 +61,22 @@ public class StudentService {
             resultLecturers.add(availableLecturers.get(0));
         }
 
-        if (noLecturers) {
+        if (!filledCourseNames.isEmpty()) {
+            StringBuilder builder = new StringBuilder().append("ОШИБКА! ДЛЯ СЛЕДУЮЩИХ КУРСОВ: ");
+            for (String courseName : filledCourseNames) {
+                builder.append(courseName).append(" ");
+            }
+
             builder.append(" ОТСУТСТВУЮТ СВОБОДНЫЕ ПРЕПОДАВАТЕЛИ! ВЫБЕРИТЕ ДРУГИЕ КУРСЫ!");
             throw new Exception(builder.toString());
         }
 
-        resultLecturers.forEach(lecturer -> lecturer.setCurrentStudentCount(lecturer.getCurrentStudentCount() + 1));
+        return resultLecturers;
     }
 
     //Проверка суммарной рабочей нагрузки студента (должна быть не менее 100 часов)
-    private void checkTotalWorkload(Student updatedStudent) throws Exception {
-        int totalWorkload = updatedStudent.getCourses().stream().mapToInt(Course::getWorkLoad).sum();
+    private void checkTotalWorkload(List<Course> currentCourses) throws Exception {
+        int totalWorkload = currentCourses.stream().mapToInt(Course::getWorkLoad).sum();
         if (totalWorkload < 100)
             throw new Exception("СЛИШКОМ МАЛАЯ НАГРУЗКА! МИНИМАЛЬНАЯ ТРЕБУЕМАЯ НАГРУЗКА - 100 ЧАСОВ!");
     }
